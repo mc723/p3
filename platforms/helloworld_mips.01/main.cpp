@@ -7,9 +7,11 @@ const char *archc_options="-abi -dy ";
 #include  "mips1.H"
 #include  "ac_tlm_mem.h"
 #include  "ac_tlm_router.h"
+#include  "ac_tlm_lock.h"
 
 using user::ac_tlm_mem;
 using user::ac_tlm_router;
+using user::ac_tlm_lock;
 
 int sc_main(int ac, char *av[])
 {
@@ -17,6 +19,7 @@ int sc_main(int ac, char *av[])
   mips1          mips1_proc1("mips1");
   ac_tlm_mem     mem("mem");
   ac_tlm_router  rou("rou");
+  ac_tlm_lock	 lock("loc");
 
 #ifdef AC_DEBUG
   ac_trace("mips1_proc1.trace");
@@ -25,6 +28,7 @@ int sc_main(int ac, char *av[])
   //DAVID mips1_proc1.DM_port(mem.target_export);
   mips1_proc1.DM_port(rou.target_export); //CPU->ROU, DM=Data memory
   rou.MEM_port(mem.target_export);        //ROU->MEM
+  rou.LOCK_port(lock.target_export);
 
   mips1_proc1.init(ac, av);
   cerr << endl;
