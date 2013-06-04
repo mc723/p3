@@ -35,11 +35,17 @@ int sc_main(int ac, char *av[])
   rou.LOCK_port(lock.target_export);
 
   int copia_ac=ac;
-  char **copia=av;
- // char copia
-  cout<<av<<" "<<copia<<endl;
+  char copia[2][255];
+  strcpy(copia[0],av[0]);
+  strcpy(copia[1],av[1]);
+  cout<<copia[0]<<copia[1]<<endl;
+  
+
+
   mips1_proc1.init(ac, av);
-  mips1_proc2.init(copia_ac,copia);
+  strcpy(av[0],copia[0]);
+  strcpy(av[1],copia[1]);
+  mips1_proc2.init(copia_ac,av);
   cerr << endl;
 
   sc_start();
