@@ -16,7 +16,10 @@ using user::ac_tlm_lock;
 int sc_main(int ac, char *av[])
 {
   //!  ISA simulator
+
   mips1          mips1_proc1("mips1");
+  mips1          mips1_proc2("mips2");
+
   ac_tlm_mem     mem("mem");
   ac_tlm_router  rou("rou");
   ac_tlm_lock	 lock("loc");
@@ -26,21 +29,32 @@ int sc_main(int ac, char *av[])
 #endif 
 
   //DAVID mips1_proc1.DM_port(mem.target_export);
+  mips1_proc2.DM_port(rou.target_export);
   mips1_proc1.DM_port(rou.target_export); //CPU->ROU, DM=Data memory
   rou.MEM_port(mem.target_export);        //ROU->MEM
   rou.LOCK_port(lock.target_export);
 
+  int copia_ac=ac;
+  char **copia=av;
+ // char copia
+  cout<<av<<" "<<copia<<endl;
   mips1_proc1.init(ac, av);
+  mips1_proc2.init(copia_ac,copia);
   cerr << endl;
 
   sc_start();
 
   mips1_proc1.PrintStat();
+  mips1_proc2.PrintStat();
   cerr << endl;
 
 #ifdef AC_STATS
+
   mips1_proc1.ac_sim_stats.time = sc_simulation_time();
+  mips1_proc2.ac_sim_stats.time = sc_simulation_time();
+
   mips1_proc1.ac_sim_stats.print();
+  mips1_proc2.ac_sim_stats.print();
 #endif 
 
 #ifdef AC_DEBUG
