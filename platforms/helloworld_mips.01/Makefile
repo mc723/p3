@@ -24,7 +24,7 @@ main.o:
 all: $(EXE)
 #------------------------------------------------------
 run: all
-	./$(EXE) --load=teste.x
+	./$(EXE) --load=teste.x lena.ppm saida.ppm
 #------------------------------------------------------
 clean:
 	rm -f $(OBJS) $(EXE) *~ *.o

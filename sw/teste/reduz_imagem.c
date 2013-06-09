@@ -19,11 +19,6 @@
 #include <string.h>
 #include <malloc.h>
 
-#define ADDR (10*1024*1024)
-#define DEV_ADDR (20*1024*1024)
-
-    	
-
 /* **************************************************************** */
 /* Sem Alteração */
 
@@ -61,15 +56,6 @@ double meanl(MatrizL *m);//calcula a média dos pixesl
 double pcc (MatrizL *matl1, MatrizL *matl2);//calcula o coeficiente de correlação de Pearson
 
 
-volatile int *lock=ADDR;
-  volatile int *dev=DEV_ADDR;
-
-	MatrizL *mat1;
-	char type[10]; /* tipo passado como ponteiro para LerImagem */
-	int nc,nl,max; /* tambem passado para ler imagem */
-	FILE *p;
-	int count=1;
-	int *data1,*data2;
 /* **************************************************************** */
 
 /*Função principal usa os paremetros de argv[] para ler as duas imagens a ser comparada. As imagens tem 
@@ -82,61 +68,24 @@ volatile int *lock=ADDR;
 /* argv[2] é a imagem de saida */
 
 int main (int argc, char *argv[]){
-	int me;
-	int i,lim;
-
-	while(*lock);
-	me=count;
-  	printf("proc %d\n",count);
-  	count++;
-  	*lock=0;
-	//exit(0);
-
-
-
-
-	if(*lock==0)
-	{
-		if(!p) {
-		printf("%d pegou o lock e vai abrir arquivo\n",me);
-		
-
-	if(argc!=3)
-	{
-		printf("erro nos parametros\n");
-		exit(0);
-	}
-	//printf("comecou\n");
-
-
-    	mat1 = LerImagem (argv[1],type,&nc,&nl,&max); /*le a imagem e traz o header nos ponteiros */
-	//printf("leu matriz\n");
-	//exit(0);
-
-
-	data1=(int*)malloc((nc/2)*(nl/2)*3*sizeof(int));
-	if(data1==NULL)
-	{
-		printf("nao alocou\n");
-	}
-	data2=(int*)malloc((nc/2)*(nl/2)*3*sizeof(int));
-	if(data2==NULL)
-	{
-		printf("nao alocou\n");
-	}
-
+    MatrizL *mat1;
+	char type[10]; /* tipo passado como ponteiro para LerImagem */
+	int nc,nl,max; /* tambem passado para ler imagem */
+    mat1 = LerImagem (argv[1],type,&nc,&nl,&max); /*le a imagem e traz o header nos ponteiros */
+      int i;
 
      
 
 	//gravar no arquivo de saida
 
 	/*abre o arquivo saida */	
+	FILE *p;
 	p=fopen(argv[2],"w");
 
 	/* imprime o header para conferencia (pode descartar) */
-	//printf("type %s\n",type);
-	//printf("nc %d nl %d\n",nc/2,nl/2); //reduz a metade
-	//printf("max %d\n",max);
+	printf("type %s\t",type);
+	printf("nc %d nl %d\n",nc/2,nl/2); //reduz a metade
+	printf("max %d\n",max);
 
 	/*imprime o novo header no arquivo saida */
 	fprintf(p,"%s\n",type); //mesmo tipo de arquivo
@@ -148,28 +97,9 @@ int main (int argc, char *argv[]){
 	//fprintf(p,"%d ",mat1->nc);
 	//fprintf(p,"%d ",mat1->nl);
 	//fprintf(p,"%d\n",max);
-	}
 
-
-	*lock = 0; //libera lock
-	} //fim do lock -> escreveu o header
-
-	while(*lock); //para garantir que esperou o outro
-	i=0;lim=((mat1->nc)*(mat1->nl))/2;
-	if(me==2)
-	{
-	i=((mat1->nc)*(mat1->nl))/2;
-	lim=((mat1->nc)*(mat1->nl));
-	}
-	printf("%d vai pegar data com i= %d e lim= %d\n",me,i,lim);
-	*lock=0;
-
-
-	int nmatriz=0;
 	int nimp=0; //limita a 12 colunas por linha no arquivo saida
 	int ncol,nlin; //conta numero de coluna e linha 
-
-	//printf("escreveu header.agora data\n");
 	
 	//este for foi retirado do método pearson
 	 for (i=0; i<((mat1->nc)*(mat1->nl)); i++){ //itera sobre todos os dados 
@@ -193,22 +123,11 @@ int main (int argc, char *argv[]){
 	{
 		//deve ser o segundo da linha para formar o quadrado com  o anterior
 		if(ncol%2==1) {
-			*dev=mat1->info[i];
-			*dev=mat1->info[i-1];
-			*dev=mat1->info[i-mat1->nl];
-			*dev=mat1->info[i-mat1->nl-1];
-			/*if((nimp+1)%12==0) { //verificar se deu 12 colunas, insere espaço ou pula linha
-	 			fprintf(p,"%d\n",*dev);
+			if((nimp+1)%12==0) { //verificar se deu 12 colunas, insere espaço ou pula linha
+	 		fprintf(p,"%d\n",(mat1->info[i]+mat1->info[i-1]+mat1->info[i-mat1->nl]+mat1->info[i-mat1->nl-1])/4);
 			}else{
-				fprintf(p,"%d ",*dev);
-			}*/
-			if(me==1)
-			{
-				data1[nmatriz]=*dev;
-			}else{
-				data2[nmatriz]=*dev;
+			fprintf(p,"%d ",(mat1->info[i]+mat1->info[i-1]+mat1->info[i-mat1->nl]+mat1->info[i-mat1->nl-1])/4);
 			}
-			nmatriz++;
 			//os calculos são o mesmo, apenas pula linha ou nao
 			//o calculo é a média entre a posição atual, o anterior (lado esquerdo),
 			// e os respectivos da linha acima
@@ -220,50 +139,13 @@ int main (int argc, char *argv[]){
       }
 
 
-	//precisa fazer um novo fim, esse supoe que o proc1 sempre termina antes
-	while(*lock);
-	if(me==1)
-	{
-		int s=0;
-		for(s=0;s<nmatriz;s++)
-		{
-			if((s+1)%12==0)
-			{
-				fprintf(p,"%d\n",data1[s]);
-			}else{
-				fprintf(p,"%d ",data1[s]);
-			}
-		}
-		*lock=0;
-	}
 
 
-	//parte de terminar é complicada, por hora vou fechar só
-	//printf("acabou data \n");
-	if(me==2)
-	{
-		int s=0;
-		for(s=0;s<nmatriz;s++)
-		{
-			if((s+1)%12==0)
-			{
-				fprintf(p,"%d\n",data2[s]);
-			}else{
-				fprintf(p,"%d ",data2[s]);
-			}
-		}
-
-		fclose(p);
-		//fim da gravacao
-		//printf("fechou arquivo\n");
-		free(data1);
-		free(data2);
-	    	matlDestroi(mat1);
-		*lock=0;
-	}
-	//printf("matou matriz\n");
-   
-exit(0); 
+	
+	fclose(p);
+	//fim da gravacao
+    matlDestroi(mat1);
+    
 return 0;    
 }
 
@@ -329,11 +211,9 @@ MatrizL *LerImagem(char *arqimg,char *type,int *nc,int *nl,int *max){
   /* ler imagem tipo P5 (PGM BINÁRIA) */
 
   ent = fopen(arqimg,"rb");
- // printf("abriu arquivo\n");
   fscanf(ent,"%s",type);
   fscanf(ent,"%d %d",nc,nl);
   fscanf(ent,"%d",max);
-  //printf("leu entradas\n");
   if (strcmp(type,"P5") == 0){
       img = (unsigned char *) calloc(3*(*nl)*(*nc),sizeof(unsigned char));
       fread(img,3*(*nl)*(*nc),sizeof(unsigned char),ent);
@@ -349,27 +229,13 @@ MatrizL *LerImagem(char *arqimg,char *type,int *nc,int *nl,int *max){
   }
   /*le imagem tipo P2 (PGM ASCII)*/
   else {
-     // printf("to no else\n");
       m = matlCria(nl,nc);
-     // printf("criou matriz\n");
       fgetc(ent);
-     // printf("pegou char\n");
-     // printf("linha %d\n",m->nl);
-     // printf("coluna %d\n",m->nc);
-	//int cont=0;	
       for (l=0; l < 3*m->nl; l++)
-      {
 	for (c=0; c < m->nc; c++)
-	{
-	    //printf("vai ler\n");
 	    fscanf(ent,"%d",&m->info[matlInd(m,l,c)]);
-		//if(cont%1000==0)
-	    //printf("parou no scanf %d\n",cont);
-	 	//cont++;
-	}
-      }
   }
-  //printf("saiu do for\n");
+  
   return(m);
 }
 
