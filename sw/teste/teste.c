@@ -193,6 +193,7 @@ int main (int argc, char *argv[]){
 	{
 		//deve ser o segundo da linha para formar o quadrado com  o anterior
 		if(ncol%2==1) {
+			while(*lock);
 			*dev=mat1->info[i];
 			*dev=mat1->info[i-1];
 			*dev=mat1->info[i-mat1->nl];
@@ -208,6 +209,7 @@ int main (int argc, char *argv[]){
 			}else{
 				data2[nmatriz]=*dev;
 			}
+			*lock=0;
 			nmatriz++;
 			//os calculos são o mesmo, apenas pula linha ou nao
 			//o calculo é a média entre a posição atual, o anterior (lado esquerdo),
